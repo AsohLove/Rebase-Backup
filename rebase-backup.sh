@@ -5,7 +5,7 @@ SOURCE_DIR=""
 BACKUP_DIR=""
 WEBHOOK_URL=""
 VERBOSE=false
-RETENTION_DAYS=7
+RETENTION_DAYS="7"
 
 LOG_FILE="$HOME/backup.log"
 
@@ -68,8 +68,9 @@ do
     esac
 done
  
-  [ -z "$SOURCE_DIR" ] && error "You are missing the source directory(-s)." 
-  [ -z "$BACKUP_DIR" ] && error "You are missing the backup directory(-d)."
+  [ -z "$SOURCE_DIR" ] && { log ERROR "You are missing the source directory(-s)"; exit 1; }
+  [ -z "$BACKUP_DIR" ] && { log ERROR "You are missing the backup directory(-d)"; exit 1; }
+
 
 
 if [ ! -d "$SOURCE_DIR" ]; then
@@ -93,6 +94,16 @@ if [ "$RETENTION_DAYS" -le 0 ]; then
 fi
 
 if [[ -n "$WEBHOOK_URL" && ! "$WEBHOOK_URL" =~ ^https:// ]]; then
-    log ERROaR "Webhook URL must start with https://"
+    log ERROR "The Webhook URL must start with https://"
     exit 1
 fi
+
+timestamp=$(date '+%Y-%m-%d_%H-%M-%S')
+backup_name="backup-${timestamp}.tar.gz"
+
+backup_path="${BACKUP_DIR}/${backup_name}"
+
+tar -czf "$backup_path" -C "$SOURCE_DIR" .
+
+log INFO "Backup has been created: $backup_path "
+
