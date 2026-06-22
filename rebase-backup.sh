@@ -5,7 +5,7 @@ SOURCE_DIR=""
 BACKUP_DIR=""
 WEBHOOK_URL=""
 VERBOSE=false
-RETENTION_DAYS="7"
+RETENTION_COUNT="7"
 
 LOG_FILE="$HOME/backup.log"
 
@@ -19,12 +19,12 @@ log() {
 usage(){
     cat <<EOF 
 Usage: 
-    rebase-backup.sh -s SOURCE_DIR -d BACKUP_DIR [-r RETENTION_DAYS] [-w WEBHOOK_URL] [-v] [-h]
+    rebase-backup.sh -s SOURCE_DIR -d BACKUP_DIR [-r RETENTION_COUNT] [-w WEBHOOK_URL] [-v] [-h]
 
 Options: 
     -s  Source directory
     -d  Backup directory
-    -r  Retention in days with a default of 7
+    -r  Number of backups to keep with a default of 7
     -w  webhook URL(this is optional)
     -v  Verbose mode
     -h  Show help
@@ -41,7 +41,7 @@ do
             BACKUP_DIR="$OPTARG"
             ;;
         r)
-            RETENTION_DAYS="$OPTARG"
+            RETENTION_COUNT="$OPTARG"
             ;;
         w) 
             WEBHOOK_URL="$OPTARG"
@@ -83,13 +83,13 @@ if [ ! -d "$BACKUP_DIR" ]; then
     exit 1
 fi
 
-if ! [[ "$RETENTION_DAYS" =~ ^[0-9]+$ ]]; then
-    log ERROR "Retention days must be an integer(default is 7)"
+if ! [[ "$RETENTION_COUNT" =~ ^[0-9]+$ ]]; then
+    log ERROR "Retention count must be an positive integer(default is 7)"
     exit 1
 fi
 
-if [ "$RETENTION_DAYS" -le 0 ]; then
-    log ERROR "The retention days must be greater than 0"
+if [ "$RETENTION_COUNT" -le 0 ]; then
+    log ERROR "The retention count must be greater than 0"
     exit 1
 fi
 
@@ -106,4 +106,13 @@ backup_path="${BACKUP_DIR}/${backup_name}"
 tar -czf "$backup_path" -C "$SOURCE_DIR" .
 
 log INFO "Backup has been created: $backup_path "
+
+find "$BACKUP_DIR" \
+    -type f \
+    -name "backup-*.tar.gz" \
+    -mtime +"$RETENTION_DAYS" \
+    -delete 
+
+log INFO "Keeping only the newest $RETENTION_COUNT backups."
+
 
