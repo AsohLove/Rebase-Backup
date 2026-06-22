@@ -8,6 +8,7 @@ VERBOSE=false
 RETENTION_COUNT=7
 
 LOG_FILE="$HOME/backup.log"
+TEMP_DIR=$(mktemp -d)
 
 
 log() {
@@ -15,6 +16,8 @@ log() {
     echo "[$(date '+%F %T')] [$level] ${*:2}" \
     | tee -a "$LOG_FILE" >&2
 }
+
+log "Backup process started!!"
 
 usage(){
     cat <<EOF 
@@ -30,6 +33,15 @@ Options:
     -h  Show help
 EOF
 }
+
+cleanup() {
+    if [ -d "$TEMP_DIR" ]; then
+        log INFO "Cleaning up all temporary files!!"
+        rm -rf "$TEMP_DIR"
+    fi
+}
+
+trap cleanup EXIT 
 
 while getopts ":s:d:r:w:vh" opt 
 do 
@@ -98,12 +110,21 @@ if [[ -n "$WEBHOOK_URL" && ! "$WEBHOOK_URL" =~ ^https:// ]]; then
     exit 1
 fi
 
+
 timestamp=$(date '+%Y-%m-%d_%H-%M-%S')
 backup_name="backup-${timestamp}.tar.gz"
 
 backup_path="${BACKUP_DIR}/${backup_name}"
 
-tar -czf "$backup_path" -C "$SOURCE_DIR" .
+temp_backup="${TEMP_DIR}/${backup_name}"
+
+tar -czf "$temp_backup" -C "$SOURCE_DIR" .
+
+[ -f "$temp_backup" ] || {
+    log ERROR "The backup creation process failed"
+    exit 1
+}
+mv "$temp_backup" "$backup_path"
 
 log INFO "Backup has been created: $backup_path "
 
@@ -112,13 +133,16 @@ mapfile -t backupFiles < <(
 ) 
 
 for ((i=RETENTION_COUNT; i<${#backupFiles[@]}; i++ )); do
-    rm -f "${backupFiles[$i]}"
-    log INFO "Old backups have been deleted: ${backupFiles[$i]}"
+    if rm -f "${backupFiles[$i]}"; then
+        log INFO "Old backups have been deleted: ${backupFiles[$i]}"
+    fi
     
 done
 
 
 log INFO "Keeping only the newest $RETENTION_COUNT backups."
+
+log INFO "Backup Completed Successfully!!"
 
 
 
