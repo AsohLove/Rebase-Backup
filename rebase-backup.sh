@@ -5,7 +5,7 @@ SOURCE_DIR=""
 BACKUP_DIR=""
 WEBHOOK_URL=""
 VERBOSE=false
-RETENTION_COUNT="7"
+RETENTION_COUNT=7
 
 LOG_FILE="$HOME/backup.log"
 
@@ -107,12 +107,18 @@ tar -czf "$backup_path" -C "$SOURCE_DIR" .
 
 log INFO "Backup has been created: $backup_path "
 
-find "$BACKUP_DIR" \
-    -type f \
-    -name "backup-*.tar.gz" \
-    -mtime +"$RETENTION_DAYS" \
-    -delete 
+mapfile -t backupFiles < <(
+    ls -1t "$BACKUP_DIR"/backup-*.tar.gz 2>/dev/null
+) 
+
+for ((i=RETENTION_COUNT; i<${#backupFiles[@]}; i++ )); do
+    rm -f "${backupFiles[$i]}"
+    log INFO "Old backups have been deleted: ${backupFiles[$i]}"
+    
+done
+
 
 log INFO "Keeping only the newest $RETENTION_COUNT backups."
+
 
 
