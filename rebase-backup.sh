@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 
 SOURCE_DIR=""
 BACKUP_DIR=""
@@ -17,7 +17,7 @@ log() {
     | tee -a "$LOG_FILE" >&2
 }
 
-log "Backup process started!!"
+log INFO "Backup process started!!"
 
 usage(){
     cat <<EOF 
@@ -33,6 +33,33 @@ Options:
     -h  Show help
 EOF
 }
+
+notify() {
+    local message="$1"
+
+    log INFO "Sending Discord notification..."
+
+    [ -z "$WEBHOOK_URL" ] && return 0
+
+    curl -sf \
+        -H "Content-Type: application/json" \
+        -d "{\"content\":\"$message\"}" \
+        "$WEBHOOK_URL" >/dev/null
+
+    log INFO "Discord notification sent"
+
+}
+
+handle_backup_error(){
+    local line="$1"
+
+    log ERROR "Your backup failed on line $line"
+    log ERROR "The command that failed is: $BASH_COMMAND"
+
+    notify "🚨 YOur backup failed on $(hostname) | line: $line | Command: $BASH_COMMAND"
+}
+
+trap 'handle_backup_error $LINENO' ERR
 
 cleanup() {
     if [ -d "$TEMP_DIR" ]; then
@@ -139,10 +166,7 @@ for ((i=RETENTION_COUNT; i<${#backupFiles[@]}; i++ )); do
     
 done
 
-
-log INFO "Keeping only the newest $RETENTION_COUNT backups."
-
 log INFO "Backup Completed Successfully!!"
 
-
+log INFO "Keeping only the newest $RETENTION_COUNT backups."
 
