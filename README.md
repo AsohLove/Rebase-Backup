@@ -1,12 +1,14 @@
 # Rebase Backup
 
+## :beginner: Overview 
+
 A production-style Bash backup utility that creates compressed backups of a directory, automatically manages backup retention, logs every operation, and optionally sends Discord webhook notifications when a backup fails.
 
-This project was built as part of the Rebase Bash Automation curriculum to demonstrate practical Bash scripting techniques including command-line argument parsing, error handling, logging, traps, scheduling with cron, and safe automation practices.
+This project was built to demonstrate practical Bash scripting techniques including command-line argument parsing, error handling, logging, traps, scheduling with cron, and safe automation practices.
 
 ---
 
-## Features
+## :sparkles: Features
 
 * Create compressed (`.tar.gz`) backups of any directory
 * Timestamped backup archives
@@ -21,17 +23,6 @@ This project was built as part of the Rebase Bash Automation curriculum to demon
 
 ---
 
-## Requirements
-
-* Bash 4+
-* `tar`
-* `curl`
-* `flock`
-* `mktemp`
-
-Most modern Linux distributions already include these utilities.
-
----
 
 ## Installation
 
@@ -57,13 +48,15 @@ chmod +x rebase-backup.sh
 
 ## Usage
 
+Run the following command on the terminal;
+
 ```bash
 ./rebase-backup.sh -s SOURCE_DIR -d BACKUP_DIR [OPTIONS]
 ```
 
 ---
 
-## Command-Line Options
+## Command-Line OPTIONS
 
 | Option | Description                              | Required |
 | ------ | ---------------------------------------- | -------- |
@@ -190,11 +183,10 @@ Example cron job that runs every 10 minutes:
 -s /absolute/path/to/source \
 -d /absolute/path/to/backups \
 -r 7 \
--w "https://discord.com/api/webhooks/your-webhook" \
->> /home/username/backup.log 2>&1
+-w "https://discord.com/api/webhooks/your-webhook" 
 ```
 
-Ensure that all paths used in the cron job are absolute paths.
+**NB**: Ensure that all paths used in the cron job are absolute paths.
 
 ---
 
@@ -218,9 +210,6 @@ Verify the script using:
 ```bash
 shellcheck rebase-backup.sh
 ```
-
-The script passes ShellCheck with zero warnings.
-
 ---
 
 ## Project Structure
@@ -235,6 +224,13 @@ rebase-backup/
 
 ---
 
-## License
 
-This project was created for educational purposes as part of the Rebase Bash Automation curriculum.
+- GitHub: [@loveasoh](https://github.com/AsohLove)
+- Twitter: [@loveasoh](https://x.com/LoveTheModifier)
+- LinkedIn: [@love asoh](https://www.linkedin.com/in/asohlove/)
+
+:earth_africa: Based in Cameroon | Open for hybrid opportunities
+
+
+## :lock: License
+This project is [MIT](./LICENSE) licensed.

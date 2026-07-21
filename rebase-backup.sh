@@ -43,23 +43,26 @@ EOF
 }
 
 debug() {
-    $VERBOSE && log INFO "$@"
+
+    if $VERBOSE; then 
+     log INFO "$@"
+    fi
 }
 
 notify() {
     local message="$1"
 
-    log INFO "Sending Discord notification..."
-
     [ -z "$WEBHOOK_URL" ] && return 0
 
-    curl -sf \
+    log INFO "Sending Discord notification..."
+    log INFO "Message: $message"
+
+    curl -v \
         -H "Content-Type: application/json" \
         -d "{\"content\":\"$message\"}" \
-        "$WEBHOOK_URL" >/dev/null
+        "$WEBHOOK_URL"
 
     log INFO "Discord notification sent"
-
 }
 
 handle_backup_error(){
@@ -68,7 +71,7 @@ handle_backup_error(){
     log ERROR "Your backup failed on line $line"
     log ERROR "The command that failed is: $BASH_COMMAND"
 
-    notify "🚨 YOur backup failed on $(hostname) | line: $line | Command: $BASH_COMMAND"
+    notify "🚨 Your backup failed on $(hostname) | line: $line | Command: $BASH_COMMAND"
 }
 
 trap 'handle_backup_error $LINENO' ERR
@@ -118,6 +121,7 @@ do
 
     esac
 done
+
  
   [ -z "$SOURCE_DIR" ] && { log ERROR "You are missing the source directory(-s)"; exit 1; }
   [ -z "$BACKUP_DIR" ] && { log ERROR "You are missing the backup directory(-d)"; exit 1; }
@@ -126,6 +130,7 @@ done
 
 if [ ! -d "$SOURCE_DIR" ]; then
     log ERROR "The source directory you entered does not exist: $SOURCE_DIR"
+    notify "🚨 Backup failed: source directory does not exist ($SOURCE_DIR)"
     exit 1
 fi
 
@@ -135,7 +140,7 @@ if [ ! -d "$BACKUP_DIR" ]; then
 fi
 
 if ! [[ "$RETENTION_COUNT" =~ ^[0-9]+$ ]]; then
-    log ERROR "Retention count must be an positive integer(default is 7)"
+    log ERROR "Retention count must be a positive integer(default is 7)"
     exit 1
 fi
 
@@ -165,9 +170,11 @@ tar -czf "$temp_backup" -C "$SOURCE_DIR" .
 }
 mv "$temp_backup" "$backup_path"
 
-debug "Creating archive..."
 
 log INFO "Backup has been created: $backup_path "
+
+debug "Temporary archive: $temp_backup"
+debug "Archive size: $(du -h "$backup_path")"
 
 mapfile -t backupFiles < <(
     ls -1t "$BACKUP_DIR"/backup-*.tar.gz 2>/dev/null
@@ -183,4 +190,9 @@ done
 log INFO "Backup Completed Successfully!!"
 
 log INFO "Keeping only the newest $RETENTION_COUNT backups."
+
+debug "Source: $SOURCE_DIR"
+debug "Backup directory: $BACKUP_DIR"
+debug "Retention count: $RETENTION_COUNT"
+debug "Temporary backup: $temp_backup"
 
