@@ -9,12 +9,20 @@ RETENTION_COUNT=7
 
 LOG_FILE="$HOME/backup.log"
 TEMP_DIR=$(mktemp -d)
+LOCK_FILE="/tmp/rebase-backup.lock"
+
 
 
 log() {
     local level="$1"
     echo "[$(date '+%F %T')] [$level] ${*:2}" \
     | tee -a "$LOG_FILE" >&2
+}
+
+exec 200> "$LOCK_FILE"
+flock -n 200 || {
+    log WARN "Another backup is already running!!!"
+    exit 0
 }
 
 log INFO "Backup process started!!"
@@ -32,6 +40,10 @@ Options:
     -v  Verbose mode
     -h  Show help
 EOF
+}
+
+debug() {
+    $VERBOSE && log INFO "$@"
 }
 
 notify() {
@@ -152,6 +164,8 @@ tar -czf "$temp_backup" -C "$SOURCE_DIR" .
     exit 1
 }
 mv "$temp_backup" "$backup_path"
+
+debug "Creating archive..."
 
 log INFO "Backup has been created: $backup_path "
 
